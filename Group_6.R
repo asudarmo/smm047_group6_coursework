@@ -190,4 +190,73 @@ library(nortest)
 ad_test <- ad.test(as.numeric(Z_log_Clean))
 print(ad_test)
 
-# 2025-11-11
+# ==============================================================================
+# element 2 : investigation of normality by resampling
+# ==============================================================================
+
+# Install the 'moments' package to calculate statistical methods. 
+if(!require(moments)) install.packages("moments", dependencies=TRUE)
+library(moments)  
+
+# set a fixed random variable
+set.seed(2025)
+
+# initial sample size and number of simulation
+sample_N <- 12
+sample_simulation <- 50000
+
+Z_Clean_mean 
+Z_Clean_variance 
+Z_Clean_sigma <- sqrt(Z_Clean_variance)
+
+# 2-a simulate form a Normal distribution, and calculate the sample excess kurtosis
+
+excess_kurtosis <- function(x) {
+  m2 <- mean((x - mean(x))^2)
+  m4 <- mean((x - mean(x))^4)
+  return(m4 / (m2^2) - 3)
+}
+
+gamma2_normal <- replicate(
+  sample_simulation,
+  excess_kurtosis(
+    rnorm(sample_N, mean = Z_Clean_mean, sd =
+            Z_Clean_sigma)))
+
+mean(gamma2_normal)
+sd(gamma2_normal)
+quantile(gamma2_normal, c(0.025, 0.5, 0.975))
+
+windows()
+hist(gamma2_normal, main = "Excess kurtosis from normal simualtion")
+qqnorm(gamma2_normal, main = "Excess kurtosis from normal simualtion")
+
+# 2-b resamping to obtain data from using bootstrap sample
+
+gamma2_boot <- replicate(sample_simulation, excess_kurtosis(sample(
+  Z_log_Clean, size = sample_N, replace = TRUE
+)))
+
+mean(gamma2_boot)
+sd(gamma2_boot)
+quantile(gamma2_boot, c(0.025, 0.5, 0.975))
+
+windows()
+hist(gamma2_boot, main = "Excess kurtosis from bootrap")
+qqnorm(gamma2_boot, main = "Excess kurtosis from bootrap")
+
+# 2-c Use suitable illustrations to investigate the di erences between the two sets of values.
+
+result_quantile <- rbind(
+  Normal_Simulation = quantile(gamma2_normal, c(0.025, 0.5, 0.975)),
+  Bootstrap_zdata   = quantile(gamma2_boot,   c(0.025, 0.5, 0.975))
+)
+
+print(result_quantile)
+
+windows()
+par(mfrow=c(1,2))
+hist(gamma2_normal, main = "Excess kurtosis from normal simualtion")
+hist(gamma2_boot, main = "Excess kurtosis from bootrap")
+
+
