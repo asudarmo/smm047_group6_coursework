@@ -1,2 +1,3 @@
-# smm047_group6_coursework
+# SMM047 Group6 Coursework
+
 Git repo for SMM047 Group 6 Coursework 
