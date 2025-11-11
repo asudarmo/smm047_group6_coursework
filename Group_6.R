@@ -163,7 +163,7 @@ summary_table_z <- descr(Z_log_Clean,
 print(summary_table_z)
 windows()
 op <- par(
-  mfrow = c(1, 1),
+  mfrow = c(2, 1),
   mar = c(4, 3, 3, 1),
   mgp = c(2, 0.7, 0),
   cex=0.9,
@@ -173,8 +173,14 @@ op <- par(
   col="steelblue"
 )
 
-plot(Z_log_Clean)
-boxplot(Z_log_Clean)
+
+plot(Z_log, main = "Z log data(original)")
+plot(Z_log_Clean, main = "Z log data(clean)", ylim = range(Z_log))
+
+windows()
+par(mfrow = c(1, 2)) 
+boxplot(Z_log, main = "Z log data(original)")
+boxplot(Z_log_Clean, main = "Z log data(clean)", ylim = range(Z_log))
 
 
 # 1.6 normal test
