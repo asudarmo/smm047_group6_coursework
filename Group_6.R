@@ -183,3 +183,5 @@ if(!require(nortest)) install.packages("nortest", dependencies=TRUE)
 library(nortest)
 ad_test <- ad.test(as.numeric(Z_log_Clean))
 print(ad_test)
+
+# 2025-11-11
