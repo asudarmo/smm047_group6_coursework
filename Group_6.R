@@ -254,9 +254,10 @@ result_quantile <- rbind(
 
 print(result_quantile)
 
+min(gamma2_boot)
+
 windows()
 par(mfrow=c(1,2))
-hist(gamma2_normal, main = "Excess kurtosis from normal simualtion")
-hist(gamma2_boot, main = "Excess kurtosis from bootrap")
-
+hist(gamma2_normal, main = "Excess kurtosis from normal simualtion", ylim = c(0,17000) , xlim = c(-2,7))
+hist(gamma2_boot, main = "Excess kurtosis from bootrap", ylim = c(0,17000), xlim = c(-2,7))
 
