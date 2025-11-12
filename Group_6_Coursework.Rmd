@@ -1,0 +1,68 @@
+---
+title: "SMM047 Computational Group Coursework - Course 6"
+author: "Ardi Wira Sudarmo"
+date: "2025-11-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Setting up environment
+
+```{r}
+
+rm(list = ls())
+graphics.off()
+
+# Change the working directory as appropriate
+setwd("C:/Users/ardih/Study/City_St_George/CS1_SMM047/smm047_group6_coursework")
+
+```
+
+
+### Data ingestion
+
+```{r}
+if(!require(quantmod)) install.packages("quantmod", dependencies=TRUE)
+library(quantmod) 
+```
+
+
+```{r}
+# Download All Ordinaries Index (^AORD) data from Yahoo Finance
+# Period = 2018-01-01 to 2024-12-31 (Yahoo Finance)
+getSymbols("^AORD", src = "yahoo", from = "2018-01-01", to = "2024-12-31")
+```
+
+```{r}
+X_Cl <- na.omit(Cl(AORD))
+plot(X_Cl)
+```
+
+### Log transformation
+
+We are performing natural log transformation on the dataset:
+
+```{r}
+
+# Natural log
+Y <- log(X_Cl)
+plot(Y)
+
+```
+
+
+```{r}
+
+Z <- diff(Y)
+print(summary(Z))
+plot(Z)
+```
+
+```{r}
+
+```
+
