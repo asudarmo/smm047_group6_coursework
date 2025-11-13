@@ -411,6 +411,33 @@ colSums(normality_flag == "O")
 kw_result <- kruskal.test(z ~ group, data = Z_log_Clean_group)
 kw_result
 
+library(dplyr)
+library(ggplot2)
+
+group_means_el3 <- Z_log_Clean_group %>%
+  group_by(group) %>%
+  summarise(mean = mean(z, na.rm=TRUE),
+            sd = sd(z, na.rm=TRUE),
+            se = sd(z, na.rm=TRUE) / sqrt(n())
+            )
+
+# Create bar plot with standard error bars
+group_means_el3 %>% ggplot(aes(x = group, y = mean, fill = group)) +
+  geom_bar(stat = "identity", width = 0.6) +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), width = 0.2) +
+  labs(
+    title = "Bar Plot with Standard Error",
+    x = "Group",
+    y = "Mean Value"
+  ) +
+  theme_minimal()
+
+length((Z_log_Clean_group %>% dplyr::filter(group == '19_1'))$z)
+length((Z_log_Clean_group %>% dplyr::filter(group == '22_1'))$z)
+
+wilcox.test((Z_log_Clean_group %>% dplyr::filter(group == '19_1'))$z,
+            (Z_log_Clean_group %>% dplyr::filter(group == '22_1'))$z,
+            paired = FALSE)
 
 # ==============================================================================
 # element 4 : investigation of constant variance
@@ -424,7 +451,7 @@ print(var_by_group)
 
 ### 4-1-1 Visuals - looking at the barplot
 
-window()
+windows()
 par(mfrow = c(1, 1))
 
 barplot(
@@ -549,3 +576,15 @@ res$Fligner <- fligner.test(z ~ group, data = Z_log_Clean_group)$p.value
 simple_table <- data.frame(Test = names(res), P_value = unlist(res))
 
 print(simple_table)
+
+# ==============================================================================
+# element 5 : independence of increments
+# ==============================================================================
+
+z_quartiles <- quantile(Z_log_Clean, probs = c(0.25, 0.5, 0.75))
+q1_Z_clean <- z_quartiles[1]
+q2_Z_clean <- z_quartiles[2]
+q3_Z_clean <- z_quartiles[3]
+
+print(z_quartiles)
+
