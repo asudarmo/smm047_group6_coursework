@@ -18,11 +18,7 @@ rm(list = ls())
 graphics.off()
 
 # Change the working directory as appropriate
-<<<<<<< HEAD
-setwd("C:/cs1")
-=======
 setwd("C:/Users/ardih/Study/City_St_George/CS1_SMM047/smm047_group6_coursework")
->>>>>>> a9bf49fa9325f3ebc45ea935919a88b60d324cf7
 
 ```
 
@@ -34,6 +30,10 @@ if(!require(quantmod)) install.packages("quantmod", dependencies=TRUE)
 library(quantmod) 
 ```
 
+```{r}
+library(dplyr)
+library(ggplot2)
+```
 
 ```{r}
 # Download All Ordinaries Index (^AORD) data from Yahoo Finance
@@ -68,5 +68,269 @@ plot(Z)
 
 ```{r}
 
+Z_mean <- mean(Z, na.rm=TRUE)[1]
+Z_q1 <- quantile(Z, 0.25, na.rm=TRUE)[[1]]
+Z_q3 <- quantile(Z, 0.75, na.rm=TRUE)[[1]]
+Z_iqr <- Z_q3 - Z_q1
+
+print(Z_mean)
+print(Z_q1)
+print(Z_q3)
+print(Z_iqr)
 ```
+
+```{r}
+
+low_Z <- Z_q1 - 3*Z_iqr
+up_Z <- Z_q3 + 3*Z_iqr
+
+print(low_Z)
+print(up_Z)
+```
+
+
+```{r}
+
+Z_out <- Z[Z < low_Z | Z > up_Z]
+
+print(Z_out)
+```
+
+```{r}
+library(lubridate)
+
+covid_start_date <- ymd("2020-02-27")
+covid_end_date <- ymd("2020-04-09")
+
+Z_clean <- Z[!(ymd(index(Z)) >= covid_start_date & ymd(index(Z)) <= covid_end_date)]
+
+```
+
+
+
+```{r}
+
+Z_clean_mean <- mean(Z_clean, na.rm=TRUE)
+Z_clean_var <- var(Z_clean, na.rm=TRUE)[[1]]
+Z_clean_median <- median(Z_clean, na.rm=TRUE)
+Z_clean_quantiles <- quantile(Z_clean, na.rm=TRUE)
+#Z_clean_skewness <-skewness(Z_clean, na.rm = FALSE, type = 3)
+#Z_clean_kurtosis <- kurtosis(Z_clean, type=3)
+print(list(
+  mean = Z_clean_mean,
+  variance = Z_clean_var,
+  median = Z_clean_median,
+  quantiles = Z_clean_quantiles
+  #skewness = Z_clean_skewness,
+  #kurtosis = Z_clean_kurtosis
+))
+
+```
+
+```{r}
+
+qqnorm(Z_clean)
+qqline(Z_clean)
+
+```
+
+
+Test
+- Assumptions
+- null hyp
+
+
+
+## Element 2
+
+```{r}
+
+# set a fixed random variable
+set.seed(2025)
+
+# initial sample size and number of simulation
+N <- 12
+B <- 50000
+
+```
+
+
+```{r}
+
+Z_clean_sd <- sqrt(Z_clean_var)
+
+```
+
+
+```{r}
+
+excess_kurtosis <- function(x) {
+  m2 <- mean((x - mean(x))^2)
+  m4 <- mean((x - mean(x))^4)
+  return(m4 / (m2^2) - 3)
+}
+
+```
+
+
+```{r}
+
+sample_excess_kurtosis <- function(x) {
+  
+  n <- length(x)
+  m4 <- sum((x-mean(x))^4) / (n-1)
+  m2 <- sum((x-mean(x))^2) / (n-1)
+  return( m4 / m2^2 - 3 )
+  
+  #adj <- n * (n+1) / ((n-1)*(n-2)*(n-3))
+  #return ( adj * sum((x-mean(x))^4) / sd(x)^4 - 3)
+}
+
+```
+
+
+```{r}
+
+gamma2_normal <- replicate(
+  B,
+  sample_excess_kurtosis(
+    rnorm(N, mean = Z_clean_mean, sd =
+            Z_clean_sd)))
+
+
+```
+
+
+```{r}
+
+mean(gamma2_normal)
+sd(gamma2_normal)
+
+```
+
+```{r}
+
+gamma2_boot <- replicate(
+  B,
+  sample_excess_kurtosis(
+    sample(Z_clean, size = N, replace = TRUE))
+)
+
+```
+
+
+```{r}
+
+mean(gamma2_boot, na.rm=TRUE)
+sd(gamma2_boot, na.rm=TRUE)
+
+```
+
+```{r}
+
+hist(gamma2_normal)
+
+```
+
+```{r}
+
+boxplot(gamma2_normal)
+
+```
+
+```{r}
+
+hist(gamma2_boot)
+
+```
+
+
+```{r}
+
+quantile(gamma2_normal, probs=c(0.025, 0.975))
+quantile(gamma2_boot, probs=c(0.025, 0.975), na.rm=TRUE)
+
+```
+
+
+```{r}
+
+data.frame(
+  value = c(gamma2_normal, gamma2_boot),
+  group = factor(rep(c("Normal", "Bootstrap"), each = B))
+) |>  # Plot cumulative density
+ggplot(aes(x = value, color = group)) +
+  stat_ecdf(linewidth = 1) +
+  labs(
+    title = "Cumulative Density Plot of Excess Kurtosis",
+    x = "Excess Kurtosis",
+    y = "Cumulative Density",
+    color = "Group"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+
+ks.test(gamma2_normal, gamma2_boot)
+
+```
+
+
+```{r}
+
+gamma2_normal_100 <- replicate(
+  B,
+  sample_excess_kurtosis(
+    rnorm(100, mean = Z_clean_mean, sd =
+            Z_clean_sd)))
+
+
+```
+
+
+```{r}
+
+mean(gamma2_normal_100)
+sd(gamma2_normal_100)
+
+```
+
+
+```{r}
+gamma2_boot_100 <- replicate(
+  B,
+  sample_excess_kurtosis(
+    sample(Z_clean, size = 100, replace = TRUE))
+)
+```
+
+
+```{r}
+
+mean(gamma2_boot_100, na.rm=TRUE)
+sd(gamma2_boot_100, na.rm=TRUE)
+
+```
+
+
+```{r}
+
+data.frame(
+  value = c(gamma2_normal_100, gamma2_boot_100),
+  group = factor(rep(c("Normal 100", "Bootstrap 100"), each = B))
+) |>  # Plot cumulative density
+ggplot(aes(x = value, color = group)) +
+  stat_ecdf(linewidth = 1) +
+  labs(
+    title = "Cumulative Density Plot of Excess Kurtosis",
+    x = "Excess Kurtosis",
+    y = "Cumulative Density",
+    color = "Dataset"
+  ) +
+  theme_minimal()
+
+```
+
 
