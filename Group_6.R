@@ -175,12 +175,24 @@ op <- par(
 
 
 plot(Z_log, main = "Z log data(original)")
-plot(Z_log_Clean, main = "Z log data(clean)", ylim = range(Z_log))
+plot(
+  Z_log_Clean,
+  main = "Z log data(clean)",
+  ylim = range(Z_log),
+  col = "lightgreen",
+  outline = TRUE
+)
 
 windows()
 par(mfrow = c(1, 2)) 
 boxplot(Z_log, main = "Z log data(original)")
-boxplot(Z_log_Clean, main = "Z log data(clean)", ylim = range(Z_log))
+boxplot(
+  Z_log_Clean,
+  main = "Z log data(clean)",
+  ylim = range(Z_log),
+  col = "lightgreen",
+  outline = TRUE
+)
 
 
 # 1.6 normal test
@@ -261,3 +273,118 @@ par(mfrow=c(1,2))
 hist(gamma2_normal, main = "Excess kurtosis from normal simualtion", ylim = c(0,17000) , xlim = c(-2,7))
 hist(gamma2_boot, main = "Excess kurtosis from bootrap", ylim = c(0,17000), xlim = c(-2,7))
 
+windows()
+par(mfrow=c(1,2))
+qqnorm(gamma2_normal, main = "Excess kurtosis from normal simualtion", ylim = c(-2,7))
+qqline(gamma2_normal)
+qqnorm(gamma2_boot, main = "Excess kurtosis from bootrap", ylim = c(-2,7))
+qqline(gamma2_boot)
+
+# ==============================================================================
+# element 3 : investigation of constant mean
+# ==============================================================================
+
+
+# 3-0 Divide your z data into 14 subsamples, each representing six months. 
+
+Z_date <- as.Date(index(Z_log_Clean))
+Z_group <- character(length(Z_date))
+
+for (i in 1:length(Z_date)) {
+  year <- format(Z_date[i], "%y")
+  month <- as.numeric(format(Z_date[i], "%m"))
+  if (month <= 6) {
+    Z_group[i] <- paste0(year, "_1")
+  } else {
+    Z_group[i] <- paste0(year, "_2")
+  }
+}
+
+Z_log_Clean_group <- data.frame(z = as.numeric(Z_log_Clean), group = Z_group)
+Z_log_Clean_group
+
+# 3-1 Visuals: Boxplot by 6-month group
+windows()
+par(mfrow = c(1, 1))
+boxplot(Z_log_Clean ~ Z_group,
+        data = Z_log_Clean_group,
+        main = "14 subsamples (2018–2024)",
+        xlab = "Half-Year Group (YY_1 = firsr half of year , YY_2 = second half of year)",
+        ylab = "Z Value",
+        las = 2,
+        col = "lightgreen",
+        outline = TRUE)
+
+# 3-2 normal test : method 1 Shapiro-Wilk, method 2 Kolmogorov-Smirnov, method 3 Anderson-Darling
+## setting the variable 
+z_val <- as.numeric(Z_log_Clean_group$z)
+Z_group_label <- as.character(Z_log_Clean_group$group)
+head(z_val)
+head(Z_group_label)
+Z_groups <- unique(Z_group)
+size_group <- length(unique(Z_group))
+
+### define the p-value variable for testing multiple normal test
+
+Sw_group <- Sw_p <- numeric(size_group)
+Ks_group <- Ks_p <- numeric(size_group)
+Ad_group <- Ad_p <- numeric(size_group) 
+
+#### multiple normal test
+
+for (i in 1:size_group) {
+  g  <- Z_groups[i]
+  xg <- z_val[Z_group_label == g]   # data in group g
+  
+  ###### Shapiro–Wilk test (Method 1) 
+  ## H0: data in this group come from a Normal distribution
+  Sw_res <- shapiro.test(xg)
+  Sw_group[i] <- Sw_res$statistic
+  Sw_p[i] <- Sw_res$p.value
+  
+  ###### Kolmogorov–Smirnov test (Method 2) 
+  ## Compare empirical CDF with Normal(mean, sd) fitted to this group
+  mu_g <- mean(xg)
+  sd_g <- sd(xg)
+  Ks_res <- ks.test(xg, "pnorm", mean = mu_g, sd = sd_g)
+  Ks_group[i] <- Ks_res$statistic
+  Ks_p[i] <- Ks_res$p.value
+  
+  ##### Anderson–Darling test (Method 3) 
+  ## H0: data in this group come from a Normal distribution
+  Ad_res <- ad.test(xg)
+  Ad_group[i] <- Ad_res$statistic
+  Ad_p[i] <- Ad_res$p.value
+}
+
+# Collect all results in one table
+normality_results <- data.frame(
+  Z_groups = Z_groups,
+  Sw_group  = Sw_group,
+  Sw_p  = Sw_p,
+  Ks_group  = Ks_group,
+  Ks_p  = Ks_p,
+  Ad_group  = Ad_group,
+  Ad_p  = Ad_p
+)
+normality_results2 <- normality_results
+normality_results2[, -1] <- round(normality_results2[, -1], 6) 
+print(normality_results2)
+
+# Create flag columns: O if p-value > 0.05, X otherwise
+normality_flag <- normality_results2
+normality_flag$Sw_flag <- ifelse(normality_flag$Sw_p > 0.05, "O", "X")
+normality_flag$Ks_flag <- ifelse(normality_flag$Ks_p > 0.05, "O", "X")
+normality_flag$Ad_flag <- ifelse(normality_flag$Ad_p > 0.05, "O", "X")
+
+# Print with flags
+print(normality_flag[, c("Z_groups", "Sw_flag", "Ks_flag", "Ad_flag")])
+colSums(normality_flag == "O")
+
+### CONCLUSION : KS METHOD FOLLOWS THE NORMAL DISTRIBUTION
+###              BUT OTHER METHODS DON'T FOLLOW THE NORMAL DISTRIBUTION
+###              WE SHOULD LOOK AT THE DATA BY Kruskal-Wallis's method 
+
+
+kw_result <- kruskal.test(z ~ group, data = Z_log_Clean_group)
+kw_result
