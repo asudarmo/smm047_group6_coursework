@@ -581,6 +581,11 @@ print(simple_table)
 # element 5 : independence of increments
 # ==============================================================================
 
+## 5-0 define the z(n-1), z(n) variables
+z_n1 <- Z_log_Clean[-length(Z_log_Clean)] # z1 to z(n-1)
+z_n <- Z_log_Clean[-1] # z2 to z(n)
+
+## 5-0-1 define the quartiles(q1,q2,q3)
 z_quartiles <- quantile(Z_log_Clean, probs = c(0.25, 0.5, 0.75))
 q1_Z_clean <- z_quartiles[1]
 q2_Z_clean <- z_quartiles[2]
@@ -588,3 +593,53 @@ q3_Z_clean <- z_quartiles[3]
 
 print(z_quartiles)
 
+## 5-1  Classify each of the zn observations according to
+## whether it is less than q1, between q1 and q2, between q2 and q3,
+## or greater than q3. 
+
+Z_quartile_group_n1 <- cut(
+  z_n1,
+  breaks = c(-Inf, q1_Z_clean, q2_Z_clean, q3_Z_clean, Inf),
+  labels = c("Q1", "Q2", "Q3", "Q4"),
+  include.lowest = TRUE, right = TRUE
+)
+
+Z_quartile_group_n <- cut(
+  z_n,
+  breaks = c(-Inf, q1_Z_clean, q2_Z_clean, q3_Z_clean, Inf),
+  labels = c("Q1", "Q2", "Q3", "Q4"),
+  include.lowest = TRUE, right = TRUE
+)
+## 5-2 contingency table
+contingency_tbl <- table(Z_quartile_group_n1, Z_quartile_group_n )
+contingency_tbl
+
+## 5-3 visual : contingency table
+### 5-3-1 : hitmap of contingency table
+library(ggplot2)
+
+df_tbl <- as.data.frame(contingency_tbl)
+colnames(df_tbl) <- c("Prev", "Next", "Freq")
+
+ggplot(df_tbl, aes(x = Next, y = Prev, fill = Freq)) +
+  geom_tile() +
+  geom_text(aes(label = Freq), color = "white", size = 4) +
+  scale_fill_gradient(low = "lightgreen", high = "darkgreen") +
+  labs(title = "Contingency Table Heatmap",
+       x = "z_n (Next state)", 
+       y = "z_{n-1} (Previous state)") +
+  theme_minimal()
+
+### 5-3-2 : probability
+transition_prob <- prop.table(contingency_tbl, 1)
+df_tbl2 <- as.data.frame(transition_prob)
+colnames(df_tbl2) <- c("Prev", "Next", "Prob")
+
+ggplot(df_tbl2, aes(x = Next, y = Prev, fill = Prob)) +
+  geom_tile() +
+  geom_text(aes(label = round(Prob, 3)), color = "white", size = 4) +
+  scale_fill_gradient(low = "lightgreen", high = "darkgreen") +
+  labs(title = "Transition Probability Heatmap",
+       x = "z_n (Next state)", 
+       y = "z_{n-1} (Previous state)") +
+  theme_minimal()
