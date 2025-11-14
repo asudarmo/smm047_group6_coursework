@@ -133,8 +133,8 @@ outlier_Z_dates <- index(Z_log)[outlier_Z_index]
 outlier_Z_values <- Z_log[outlier_Z_index]
 outlier_Z_values
 
-plot(Y_log)
-plot(Y_log["2020-02-27/2020-04-09"])
+# plot(Y_log)
+# plot(Y_log["2020-02-27/2020-04-09"])
 
 # 1-3 Exclude data from 2020-02-27 to 2020-04-09
 Z_log_Clean <- Z_log[!(index(Z_log) >= as.Date("2020-02-27") &
@@ -244,7 +244,6 @@ excess_kurtosis <- function(x) {
 
 gamma2_normal <- replicate(sample_simulation, excess_kurtosis(rnorm(sample_N, mean = Z_Clean_mean, sd =
                                                                       Z_Clean_sigma)))
-
 mean(gamma2_normal)
 sd(gamma2_normal)
 quantile(gamma2_normal, c(0.025, 0.5, 0.975))
@@ -322,6 +321,7 @@ for (i in 1:length(Z_date)) {
 
 Z_log_Clean_group <- data.frame(z = as.numeric(Z_log_Clean), group = Z_group)
 Z_log_Clean_group
+
 
 # 3-1 Visuals: Boxplot by 6-month group
 windows()
@@ -445,6 +445,13 @@ wilcox.test((Z_log_Clean_group %>% dplyr::filter(group == '19_1'))$z,
 
 ## 4-0 calcuate the variance each group
 
+group_var_el4 <- Z_log_Clean_group %>%
+  group_by(group) %>%
+  summarise(mean = mean(z, na.rm=TRUE),
+            var = var(z, na.rm=TRUE),
+            sd = sd(z, na.rm=TRUE)
+  )
+group_var_el4 
 var_by_group <- aggregate(z ~ group, data = Z_log_Clean_group, FUN =  var)
 names(var_by_group) <- c("group", "sample_var")
 print(var_by_group)
@@ -470,6 +477,7 @@ barplot(
 var_group_max <- var_by_group$group[which.max(var_by_group$sample_var)]
 var_group_min <- var_by_group$group[which.min(var_by_group$sample_var)]
 z_max <- Z_log_Clean_group$z[Z_log_Clean_group$group == var_group_max]
+# z_max <- Z_log_Clean_group$z[Z_log_Clean_group$group == '22_1']
 z_min <- Z_log_Clean_group$z[Z_log_Clean_group$group == var_group_min]
 
 simple_boot <- function(x, B = sample_simulation) {
@@ -620,7 +628,7 @@ library(ggplot2)
 
 df_tbl <- as.data.frame(contingency_tbl)
 colnames(df_tbl) <- c("Prev", "Next", "Freq")
-
+windows()
 ggplot(df_tbl, aes(x = Next, y = Prev, fill = Freq)) +
   geom_tile() +
   geom_text(aes(label = Freq), color = "white", size = 4) +
@@ -643,3 +651,9 @@ ggplot(df_tbl2, aes(x = Next, y = Prev, fill = Prob)) +
        x = "z_n (Next state)", 
        y = "z_{n-1} (Previous state)") +
   theme_minimal()
+
+### 5-4 : chisq. test
+
+ chisq.test(Z_quartile_group_n1, Z_quartile_group_n)
+ 
+#### 
