@@ -102,24 +102,11 @@ outlier_values <- Y_log[outlier_index]
 outlier_values
 
 # we can't find the outlier from definite outlier
-# However, looking at boxplot definite outlier from Z data (Yn - Yn-1)
+# However, looking at boxlot definite outlier from Z data (Yn - Yn-1)
 Na_Z_log <- diff(Y_log)
 anyNA(Na_Z_log)
 Z_log <- na.omit(Na_Z_log)
 anyNA(Z_log)
-
-Z_mean <- mean(Z_log)
-Z_variance <- var(Z_log)
-Z_median <- median(Z_log)
-Z_quantiles <- quantile(Z_log)
-
-print(list(
-  mean = Z_mean,
-  variance = Z_variance,
-  median = Z_median,
-  quantiles = Z_quantiles
-))
-summary(Z_log)
 
 Q1_Z <- quantile(Z_log, 0.25, na.rm = TRUE)
 Q3_Z <- quantile(Z_log, 0.75, na.rm = TRUE)
@@ -133,15 +120,19 @@ outlier_Z_dates <- index(Z_log)[outlier_Z_index]
 outlier_Z_values <- Z_log[outlier_Z_index]
 outlier_Z_values
 
-# plot(Y_log)
-# plot(Y_log["2020-02-27/2020-04-09"])
-
 # 1-3 Exclude data from 2020-02-27 to 2020-04-09
 Z_log_Clean <- Z_log[!(index(Z_log) >= as.Date("2020-02-27") &
                          index(Z_log) <= as.Date("2020-04-09"))]
 Z_log_Clean
 
-# 1-4 calculate cleaned Z data
+# 1-4 calculate Original data and cleaned Z data
+
+Z_mean <- mean(Z_log)
+Z_variance <- var(Z_log)
+Z_median <- median(Z_log)
+Z_quantiles <- quantile(Z_log) 
+Z_skewness <- e1071::skewness(Z_log, na.rm = FALSE, type = 3)
+Z_kurtosis <- e1071::kurtosis(Z_log, type = 3)
 
 Z_Clean_mean <- mean(Z_log_Clean)
 Z_Clean_variance <- var(Z_log_Clean)
@@ -149,42 +140,53 @@ Z_Clean_median <- median(Z_log_Clean)
 Z_Clean_quantiles <- quantile(Z_log_Clean)
 Z_Clean_skewness <- e1071::skewness(Z_log_Clean, na.rm = FALSE, type = 3)
 Z_Clean_kurtosis <- e1071::kurtosis(Z_log_Clean, type = 3)
-print(
-  list(
-    mean = Z_Clean_mean,
-    variance = Z_Clean_variance,
-    median = Z_Clean_median,
-    quantiles = Z_Clean_quantiles,
-    skewness = Z_Clean_skewness,
-    kurtosis = Z_Clean_kurtosis
+
+summary_table <- data.frame(
+  Statistic = c(
+    "Mean", "Variance", "Median",
+    "Quantile_0%", "Quantile_25%",
+    "Quantile_50%", "Quantile_75%",
+    "Quantile_100%", "Skewness", "Kurtosis"
+  ),
+  
+  Z_original = c(
+    Z_mean,
+    Z_variance,
+    Z_median,
+    Z_quantiles[1],
+    Z_quantiles[2],
+    Z_quantiles[3],
+    Z_quantiles[4],
+    Z_quantiles[5],
+    Z_skewness,
+    Z_kurtosis
+  ),
+  
+  Z_cleaning = c(
+    Z_Clean_mean,
+    Z_Clean_variance,
+    Z_Clean_median,
+    Z_Clean_quantiles[1],
+    Z_Clean_quantiles[2],
+    Z_Clean_quantiles[3],
+    Z_Clean_quantiles[4],
+    Z_Clean_quantiles[5],
+    Z_Clean_skewness,
+    Z_Clean_kurtosis
   )
 )
+summary_table$Z_original <- round(as.numeric(summary_table$Z_original), 6)
+summary_table$Z_cleaning <- round(as.numeric(summary_table$Z_cleaning), 6)
+summary_table$Change_percent <- 
+  round(((summary_table$Z_cleaning - summary_table$Z_original) / abs(summary_table$Z_original)
+  ) * 100, 2)
+print(summary_table)
 
-# 1-5 summary of cleaned Z data
+# 1-5 Visualise : time plot, boxplot
 
-summary(Z_log_Clean)
-
-summary_table_z <- descr(
-  Z_log_Clean,
-  stats     = c("mean", "sd", "skewness", "kurtosis"),
-  transpose = TRUE,
-  headings  = FALSE,
-  round.digits = 6
-)
 print(summary_table_z)
 windows()
-op <- par(
-  mfrow = c(2, 1),
-  mar = c(4, 3, 3, 1),
-  mgp = c(2, 0.7, 0),
-  cex = 0.9,
-  lwd = 1.5,
-  lty = 2,
-  pch = 16,
-  col = "steelblue"
-)
-
-
+par(mfrow = c(2, 1), mar = c(4, 4, 2, 1))
 plot(Z_log, main = "Z log data(original)")
 plot(
   Z_log_Clean,
@@ -195,24 +197,47 @@ plot(
 )
 
 windows()
-par(mfrow = c(1, 2))
-boxplot(Z_log, main = "Z log data(original)")
+par(mfrow = c(2, 1), mar = c(4, 4, 2, 1))
+boxplot(Z_log,
+        main = "Z log data(original)",
+        horizontal = TRUE,
+        outline = TRUE)
 boxplot(
   Z_log_Clean,
   main = "Z log data(clean)",
+  horizontal = TRUE,
   ylim = range(Z_log),
   col = "lightgreen",
   outline = TRUE
 )
 
-
 # 1.6 normal test
-## Anderson–Darling (good, does not require user to supply mean/sd)
+## to apply to AD test
 if (!require(nortest))
   install.packages("nortest", dependencies = TRUE)
 library(nortest)
+
+## to apply to jarque.bera test
+if (!require(tseries)) {
+  install.packages("tseries", dependencies = TRUE)
+  library(tseries)
+}
+library(tseries)
+
+## 1. Kolmogorov–Smirnov Test (KS Test)(bad, require user to supply mean/sd)
+
+ Z_Clean_mean
+ Z_Clean_sd <- sd(Z_log_Clean)
+ ks_test <- ks.test(Z_log_Clean, "pnorm", mean = Z_Clean_mean, sd = Z_Clean_sd)
+ print(ks_test)
+ 
+## 2. Anderson–Darling (good, does not require user to supply mean/sd)
+
 ad_test <- ad.test(as.numeric(Z_log_Clean))
 print(ad_test)
+
+## 3. Jarque–Bera Test 
+jarque.bera.test(as.numeric(Z_log_Clean))
 
 # ==============================================================================
 # element 2 : investigation of normality by resampling
