@@ -184,7 +184,7 @@ print(summary_table)
 
 # 1-5 Visualise : time plot, boxplot
 
-print(summary_table_z)
+
 windows()
 par(mfrow = c(2, 1), mar = c(4, 4, 2, 1))
 plot(Z_log, main = "Z log data(original)")
@@ -666,6 +666,7 @@ ggplot(df_tbl, aes(x = Next, y = Prev, fill = Freq)) +
 ### 5-3-2 : probability
 transition_prob <- prop.table(contingency_tbl, 1)
 df_tbl2 <- as.data.frame(transition_prob)
+windows()
 colnames(df_tbl2) <- c("Prev", "Next", "Prob")
 
 ggplot(df_tbl2, aes(x = Next, y = Prev, fill = Prob)) +
