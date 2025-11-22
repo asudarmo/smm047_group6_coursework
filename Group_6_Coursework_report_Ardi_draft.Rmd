@@ -1,0 +1,105 @@
+---
+title: "SMM047 Computational Group Coursework - Course 6"
+author: "Ardi Wira Sudarmo"
+date: "2025-11-11"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+```{r}
+#rm(list = ls())
+#graphics.off()
+
+# Change the working directory as appropriate
+setwd("C:/Users/ardih/Study/City_St_George/CS1_SMM047/Group_Coursework")
+```
+
+
+Load libraries
+```{r echo=TRUE, results=FALSE, message=FALSE}
+library(quantmod)
+
+library(rmarkdown)
+library(kableExtra)
+```
+
+
+```{r}
+library(tidyr)
+```
+
+
+## Introduction
+
+Introduction section here
+
+
+## Element 1
+
+Element 1 here
+
+
+## Element 2
+
+
+In this section we performed a Monte-Carlo simulation to compare the distribution of sample excess kurtosis between the cleaned Z dataset ($Z_c$) and that of a normal distribution.
+
+We generated B = 50000 bootstrap samples by repeatedly sampling with replacement N = 12 data points from $Z_c$.
+We also generated B = 50000 samples of size N = 12 each from a normal distribution with the mean and sd set equal to the sample mean and sd of $Z_c$ (i.e. $\mu = \bar{Z_c}$ and $\sigma = s_{Zc}$). For each sample, the sample excess kurtosis is computed, so that there are equal 50000 values for the bootstrapped samples ($\hat \gamma_2^{(B)}$) and the normal samples ($\hat \gamma_2^{(norm)}$).
+
+From their histograms, we observed that the distributions of $\hat \gamma_2^{(B)}$ and $\hat \gamma_2^{(norm)}$ are both positively skewed but that of $\hat \gamma_2^{(B)}$ has heavier right tail. The sample mean and sd of ($\hat \gamma_2^{(B)}$) are also larger, as can be found in the table below.
+
+The mean of the excess kurtosis of bootstrap samples will tend to the underlying population excess kurtosis ($\gamma_2^{Z_C}$) of $Z_c$ as B and N increase (TODO put reference here). Similarly, by weak LLN the same can be said for that of the normal samples. If $Z_c$ is normally distributed, we should expect the two sample means to be equal. 
+To test this, we perform Welch's t-test, which does not assume equal variance and is therefore more robust. The p-value is less than $2.2 \times 10^{-16}$ and we can therefore reject the null hypothesis that the mean of excess kurtosis are equal.
+
+This suggests that $Z_c$ is not normally distributed, and perhaps it can be illustrated more clearly by plotting the empirical cumulative distribution function (ecdf) of $\hat \gamma_2^{(B)}$ and $\hat \gamma_2^{(norm)}$ in the same axis.
+An asymptotic two-sample Kolmogoroc-Smirnov (K-S) test was performed, which yielded p-value less than $2.2 \times 10^{-16}$. So the null hypothesis that they come from the same distribution can be rejected.
+
+We noted that the mean of $\hat \gamma_2^{(norm)}$ when N = 12 (-0.6723693 with standard error of 0.00318)  was quite different than theoretical value of 0. We thought this was due to the small sample size. To investigate, we ran the same analysis with N = 100. The mean of $\hat \gamma_2^{(norm)}$ now becomes much closer to 0. The conclusion from Welch's t-test and K-S test remain as before, indeed the p-values for both test when N = 100 are smaller now.
+ 
+
+
+
+```{r}
+
+tbl2.df <- data.frame(
+  distribution = c('Normal', 'Normal', 'Bootstrapped', 'Bootstrapped'),
+  N = c(12, 100, 12, 100),
+  mean = c(-0.6723693, -0.08968082, -0.1740248, 1.892176),
+  sd = c(0.7105574, 0.4480121, 1.088014, 1.872886)
+)
+
+```
+
+
+
+```{r}
+
+tbl2.df |> pivot_wider(
+  names_from = N,
+  values_from = c(mean, sd)
+  ) |>
+  kbl(col.names = c('Dataset', 'N=12', 'N=100', 'N=12', 'N=100')) |>
+  kable_paper(full_width = F) |>
+  add_header_above(c(" " = 1, "Mean" = 2, "Std Dev" = 2))
+```
+
+
+## Element 3
+
+Having divided $Z_c$ into 14 subgroups, each representing 6 months, we decided to keep all groups since the `2020_1` group corresponding to covid period still has sufficiently large size of 95, which is still adequate for the analysis in element 3 and 4. For each group, we computed the mean, sd and standard error of the mean. We then displayed a barplot with standard error whisker to visualise the group mean comparison.
+
+We observed that the not all standard error whiskers overlap, so there was a reason to suspect that group means are not constant. We did not use ANOVA because the group datasets are not normally distributed. Rather we performed non-parametric Kruskal-Wallis test, which gave p-value of 0.8675, so we could not reject the null hypothesis that the group means are all equal.
+
