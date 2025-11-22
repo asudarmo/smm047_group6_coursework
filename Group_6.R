@@ -274,8 +274,9 @@ sd(gamma2_normal)
 quantile(gamma2_normal, c(0.025, 0.5, 0.975))
 
 windows()
-hist(gamma2_normal, main = "Excess kurtosis from normal simualtion")
-qqnorm(gamma2_normal, main = "Excess kurtosis from normal simualtion")
+par(mfrow = c(1, 2))
+hist(gamma2_normal, main = "Excess kurtosis from normal")
+qqnorm(gamma2_normal, main = "Excess kurtosis from normal")
 
 # 2-b resamping to obtain data from using bootstrap sample
 
@@ -288,6 +289,7 @@ sd(gamma2_boot)
 quantile(gamma2_boot, c(0.025, 0.5, 0.975))
 
 windows()
+par(mfrow = c(1, 2))
 hist(gamma2_boot, main = "Excess kurtosis from bootrap")
 qqnorm(gamma2_boot, main = "Excess kurtosis from bootrap")
 
@@ -485,16 +487,23 @@ print(var_by_group)
 
 windows()
 par(mfrow = c(1, 1))
+par(mar = c(6, 6, 4, 2) + 0.2)
+par(mgp = c(4, 1.2, 0)) 
 
 barplot(
   var_by_group$sample_var,
   names.arg = var_by_group$group,
-  las = 2,
+  las = 1,
   main = "Sample variance of z by 6-month group",
   xlab = "Half-year group",
   ylab = "Sample variance of z",
   col = "lightblue",
+  border = NA,
+  cex.names = 0.9,   
+  cex.axis = 0.9,
+  ylim = c(0, max(var_by_group$sample_var) * 1.2)
 )
+
 
 ### 4-1-1  Visuals - looking at 95% confidence interval
 
