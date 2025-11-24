@@ -13,8 +13,8 @@
 
 rm(list = ls())       # Remove all objects
 graphics.off()        # Close all graphical devices
-#setwd("C:/cs1")
-setwd("C:/Users/ardih/Study/City_St_George/CS1_SMM047/smm047_group6_coursework")
+setwd("C:/cs1")
+#setwd("C:/Users/ardih/Study/City_St_George/CS1_SMM047/smm047_group6_coursework")
 
 # ==============================================================================
 # Preparation Step (1) Extracting data
@@ -540,6 +540,8 @@ barplot(
 ### 4-1-1  Visuals - looking at 95% confidence interval
 
 #### bootstrap method
+sample_N <- 12
+sample_simulation <- 50000
 var_group_max <- var_by_group$group[which.max(var_by_group$sample_var)]
 var_group_min <- var_by_group$group[which.min(var_by_group$sample_var)]
 z_max <- Z_log_Clean_group$z[Z_log_Clean_group$group == var_group_max]
@@ -724,3 +726,5 @@ ggplot(df_tbl2, aes(x = Next, y = Prev, fill = Prob)) +
  chisq.test(Z_quartile_group_n1, Z_quartile_group_n)
  
 #### 
+ 
+ 
